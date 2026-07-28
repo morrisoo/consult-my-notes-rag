@@ -13,9 +13,9 @@ TAG_LINE = re.compile(r"^Tags:\s*(.+)$", re.IGNORECASE | re.MULTILINE)
 class Note:
     path: Path
     title: str
-    definition: str
+    description: str
     body: str
-    tags: str
+    tags: list[str]
 
 
 def parse_notes(path: Path):
@@ -30,7 +30,7 @@ def parse_notes(path: Path):
     defintition = parts[0]
     body = "\n\n".join(parts[1:])
 
-    return Note(path=path, title=title, definition=defintition, body=body, tags=None)
+    return Note(path=path, title=title, description=defintition, body=body, tags=None)
 
 
 def load_notes(notes_dir: Path):
@@ -43,9 +43,5 @@ def load_notes(notes_dir: Path):
             if text is not None:
                 notes.append(text)
         except Exception:
-            logger.info(Warning, f"Unable to parse file {md_file}")
+            logger.warning(f"Unable to parse file {md_file}", exc_info=True)
     return notes
-
-
-if __name__ == "__main__":
-    print(load_notes(Path("/Users/oonaghmorrison/Desktop/Codex/Experimentation")))

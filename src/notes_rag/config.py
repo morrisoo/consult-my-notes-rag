@@ -9,14 +9,15 @@ load_dotenv()
 
 @dataclass
 class Config:
-    notes_dir: str
-    storage_dir: str
+    notes_dir: Path
+    storage_dir: Path
     llm_model: str
     embed_model: str
     chunk_size: int
     chunk_overlap: int
     top_k: int
 
+    @classmethod
     def get_env_variables(cls):
         notes_dir = os.getenv("NOTES_DIR")
         if not notes_dir:
@@ -25,7 +26,7 @@ class Config:
             )
 
         notes_dir = Path(notes_dir).expanduser().resolve()
-        storage_dir = Path(os.getenv("STORAGE_DIR", "./storage")).expanduser().reslove()
+        storage_dir = Path(os.getenv("STORAGE_DIR", "./storage")).expanduser().resolve()
         llm_model = os.getenv("LLM_MODEL", "llama3")
         embed_model = os.getenv("EMBED_MODEL", "nomic-embed-text")
         chunk_size = int(os.getenv("CHUNK_SIZE", "500"))
