@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-SEPARATOR = "-------"
+SEPARATOR = re.compile(r"^\s*-{3,}\s*$", re.MULTILINE)
 TAG_LINE = re.compile(r"^Tags:\s*(.+)$", re.IGNORECASE | re.MULTILINE)
 
 
@@ -21,11 +21,14 @@ class Note:
 def parse_notes(path: Path):
     """Parse a note file into a Note object."""
     text = path.read_text(encoding="utf-8")
-    parts = text.split(SEPARATOR)
+    parts = [p.strip() for p in SEPARATOR.split(text) if p.strip()]
+    if len(parts) < 2:
+        logger.warning("No Separator Found")
+        return None
 
     title = path.stem
-    defintition = parts[0].strip()
-    body = parts[1].strip()
+    defintition = parts[0]
+    body = "\n\n".join(parts[1:])
 
     return Note(path=path, title=title, definition=defintition, body=body, tags=None)
 
@@ -43,3 +46,6 @@ def load_notes(notes_dir: Path):
             logger.info(Warning, f"Unable to parse file {md_file}")
     return notes
 
+
+if __name__ == "__main__":
+    print(load_notes(Path("/Users/oonaghmorrison/Desktop/Codex/Experimentation")))
