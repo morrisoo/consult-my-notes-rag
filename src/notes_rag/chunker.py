@@ -6,6 +6,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class Chunk:
     text: str
@@ -27,7 +28,6 @@ def chunk_note(note: Note, chunk_size: int, chunk_overlap: int) -> list[Chunk]:
     chunks = []
 
     if note.description:
-        # Add description chunk
         chunks.append(
             Chunk(
                 text=note.description,
@@ -39,10 +39,7 @@ def chunk_note(note: Note, chunk_size: int, chunk_overlap: int) -> list[Chunk]:
             )
         )
 
-    # for each body section split into chunks
-
     for i, section in enumerate(split_sections(note.body)):
-        print(section)
         chunks.append(
             Chunk(
                 text=section,
@@ -56,4 +53,3 @@ def chunk_note(note: Note, chunk_size: int, chunk_overlap: int) -> list[Chunk]:
 
     logger.info(f"Chunked {note.path.name} into {len(chunks)} chunks")
     return chunks
-
