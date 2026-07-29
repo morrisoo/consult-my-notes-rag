@@ -52,6 +52,7 @@ def delete_note_chunks(note_path: str, collection) -> None:
 
 
 def upsert_chunks(chunks: list[Chunk], config: Config, collection) -> None:
+    """Upsert chunks to collection."""
     if not chunks:
         return
 
@@ -79,6 +80,7 @@ def upsert_chunks(chunks: list[Chunk], config: Config, collection) -> None:
 
 
 def index_notes(chunks_by_note: dict[str, list[Chunk]], config: Config) -> None:
+    """Reindex notes by deleting and upserting."""
     collection = get_collection(config)
     for note_path, chunks in chunks_by_note.items():
         delete_note_chunks(note_path, collection)
@@ -86,6 +88,7 @@ def index_notes(chunks_by_note: dict[str, list[Chunk]], config: Config) -> None:
 
 
 def query(text: str, config: Config, top_k: int | None = None) -> dict:
+    """Query collection with embedded input."""
     collection = get_collection(config)
     embedding = embed_text(text)
     return collection.query(query_embeddings=[embedding], n_results=top_k or config.top_k)

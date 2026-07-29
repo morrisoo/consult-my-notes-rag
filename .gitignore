@@ -1,3 +1,5 @@
+.DS_store
+
 # Python-generated files
 __pycache__/
 *.py[oc]
@@ -11,3 +13,6 @@ wheels/
 
 # Env file
 .env
+
+# Vector store
+/storage
