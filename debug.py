@@ -1,7 +1,7 @@
 from notes_rag.config import Config
 from notes_rag.ingest import load_notes
 from notes_rag.chunker import chunk_note
-from notes_rag.vector_db import index_notes
+from notes_rag.vectorstore import index_notes
 import logging
 
 logger = logging.getLogger(__name__)
