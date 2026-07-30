@@ -3,6 +3,7 @@ from notes_rag.ingest import load_notes
 from notes_rag.chunker import chunk_note
 from notes_rag.vectorstore import index_notes
 import logging
+from notes_rag.rag import answer_question
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -25,6 +26,15 @@ def main():
 
     index_notes(chunks_by_note, config)
     logger.info("Indexed notes.")
+
+    question = "What did I write about bayesian inference?"
+    answer = answer_question(question, config)
+    print(f"\nQ: {question}")
+    print(f"\nA: {answer.text}")
+    if answer.sources:
+        print("\nSources:")
+        for s in answer.sources:
+            print(f" - {s.title} ({s.kind})")
 
 
 if __name__ == "__main__":

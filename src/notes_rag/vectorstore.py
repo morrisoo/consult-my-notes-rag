@@ -24,7 +24,7 @@ def get_client(config: Config):
 def get_collection(config: Config):
     """Reopen or create collection."""
     client = get_client(config)
-    return client.get_or_create_collection(name=COLLECTION_NAME)
+    return client.get_or_create_collection(name=COLLECTION_NAME, metadata={"hnsw:space":"cosine"})
 
 
 def embed_text(text: str, config: Config) -> list[float]:
@@ -90,5 +90,5 @@ def index_notes(chunks_by_note: dict[str, list[Chunk]], config: Config) -> None:
 def query(text: str, config: Config, top_k: int | None = None) -> dict:
     """Query collection with embedded input."""
     collection = get_collection(config)
-    embedding = embed_text(text)
+    embedding = embed_text(text, config)
     return collection.query(query_embeddings=[embedding], n_results=top_k or config.top_k)
