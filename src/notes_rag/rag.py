@@ -9,7 +9,7 @@ from notes_rag.vectorstore import query
 
 logger = logging.getLogger(__name__)
 
-DISTANCE_THRESHOLD = 0.5
+DISTANCE_THRESHOLD = 0.8
 
 NO_MATCH_MESSAGE = "Sorry, I couldn't find anything that answers your question."
 
@@ -62,6 +62,7 @@ def _filter_by_distance(
 
 def answer_question(question: str, config: Config):
     results = query(question, config)
+    print(results)
 
     if not results["documents"] or not results["documents"][0]:
         logger.info(f"No results returned for query {question}")
