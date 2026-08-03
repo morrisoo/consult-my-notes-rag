@@ -30,7 +30,13 @@ def parse_notes(path: Path):
     defintition = parts[0]
     body = "\n\n".join(parts[1:])
 
-    return Note(path=path, title=title, description=defintition, body=body, tags=None)
+    tags = []
+    tag_match = TAG_LINE.search(body)
+    if tag_match:
+        tags = [t.strip() for t in tag_match.group(1).split(",") if t.strip()]
+        body = TAG_LINE.sub("", body).strip()
+
+    return Note(path=path, title=title, description=defintition, body=body, tags=tags)
 
 
 def load_notes(notes_dir: Path):
@@ -43,5 +49,5 @@ def load_notes(notes_dir: Path):
             if text is not None:
                 notes.append(text)
         except Exception:
-            logger.warning(f"Unable to parse file {md_file}", exc_info=True)
+            logger.warning(f"Unable to parse file {md_file}", md_file, exc_info=True)
     return notes

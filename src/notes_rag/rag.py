@@ -44,6 +44,7 @@ def _build_context(documents: list[str], metadata: list[dict]):
 def _filter_by_distance(
     results: dict, threshold: float
 ) -> tuple[list[str], list[float]]:
+    """Keep only the closest retrieved chunks."""
     documents = results["documents"][0]
     metadatas = results["metadatas"][0]
     distances = results["distances"][0]
@@ -60,8 +61,8 @@ def _filter_by_distance(
     return kept_docs, kept_meta
 
 
-def answer_question(question: str, config: Config):
-    results = query(question, config)
+def answer_question(question: str, config: Config, tags: list[str] | None = None):
+    results = query(question, config, tags=tags)
     print(results)
 
     if not results["documents"] or not results["documents"][0]:

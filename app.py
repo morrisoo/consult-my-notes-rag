@@ -5,7 +5,7 @@ from notes_rag.chunker import chunk_note
 from notes_rag.config import Config
 from notes_rag.ingest import load_notes
 from notes_rag.rag import answer_question
-from notes_rag.vectorstore import index_notes
+from notes_rag.vectorstore import index_notes, get_all_tags
 
 
 logger = logging.getLogger(__name__)
@@ -43,6 +43,16 @@ def main():
     st.title("Consult My Notes 📝")
     config = get_config()
 
+    css = """.st-key-title_container {background-color: #FFE7E6;}"""
+    st.html(f"<style>{css}</style>")
+
+    with st.container(border=True, key="title_container"):
+        st.markdown("This is a chatbot! Ask me **anything** about your linked data.")
+        st.markdown(
+            "This example compiles artifical meeting notes about a project over several weeks."
+        )
+
+
     if st.button("Refresh Notes"):
         with st.spinner("Loading, chunking and embedding notes..."):
             try:
@@ -53,14 +63,14 @@ def main():
             except Exception:
                 logger.exception("Indexing failed")
 
-    css = """.st-key-title_container {background-color: #FFE7E6;}"""
-    st.html(f"<style>{css}</style>")
+    try:
+        available_tags = get_all_tags(config)
+    except Exception:
+        logger.exception("Could not load tags.")
+        available_tags = []
 
-    with st.container(border=True, key="title_container"):
-        st.markdown(
-            "This is a chatbot! Ask me **anything** about your linked data."
-        )
-        st.markdown("This example compiles artifical meeting notes about a project over several weeks.")
+    selected_tags = st.multiselect(options=available_tags, label="Filter by tag:")
+
 
     question = st.text_input("Ask something from your notes:")
 

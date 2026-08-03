@@ -33,7 +33,7 @@ def chunk_note(note: Note, chunk_size: int, chunk_overlap: int) -> list[Chunk]:
                 text=note.description,
                 note_path=note.path,
                 title=note.title,
-                tags=None,
+                tags=note.tags,
                 kind="description",
                 chunk_index=0,
             )
@@ -45,7 +45,7 @@ def chunk_note(note: Note, chunk_size: int, chunk_overlap: int) -> list[Chunk]:
                 text=section,
                 note_path=note.path,
                 title=note.title,
-                tags=None,
+                tags=note.tags,
                 kind="body",
                 chunk_index=i,
             )
