@@ -4,7 +4,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 @dataclass
@@ -25,9 +27,9 @@ class Config:
                 "Notes directory is not found. Specify it in your .env file."
             )
 
-        notes_dir = Path(notes_dir).expanduser().resolve()
-        storage_dir = Path(os.getenv("STORAGE_DIR", "./storage")).expanduser().resolve()
-        llm_model = os.getenv("LLM_MODEL", "llama3")
+        notes_dir = Path(PROJECT_ROOT / notes_dir).expanduser().resolve()
+        storage_dir = Path(PROJECT_ROOT / os.getenv("STORAGE_DIR", "./storage")).expanduser().resolve()
+        llm_model = os.getenv("LLM_MODEL", "llama3.1")
         embed_model = os.getenv("EMBED_MODEL", "nomic-embed-text")
         chunk_size = int(os.getenv("CHUNK_SIZE", "500"))
         chunk_overlap = int(os.getenv("CHUNK_OVERLAP", "30"))
