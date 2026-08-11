@@ -1,5 +1,6 @@
 from notes_rag.chunker import Chunk
 from notes_rag.config import Config
+from datetime import date
 from chromadb import PersistentClient
 from ollama import embeddings
 import logging
@@ -13,8 +14,13 @@ def make_chunk_id(chunk: Chunk) -> str:
 
 
 def tag_key(tag: str) -> str:
-    """Turn a tag into a metadata field name"""
+    """Turn a tag into a metadata field name."""
     return f"tag_{tag.strip().lower().replace(' ', '-')}"
+
+
+def date_to_int(d) -> int:
+    """Encode a date as a int."""
+    return int(d.strftime("%Y%m%d"))
 
 
 def note_id_prex(note_path: str) -> str:
@@ -76,7 +82,12 @@ def upsert_chunks(chunks: list[Chunk], config: Config, collection) -> None:
         }
         for tag in c.tags:
             meta[tag_key(tag)] = True
+
+        if c.date is not None:
+            meta["date"] = date_to_int(c.date)
+
         metadata.append(meta)
+
     embeddings = embed_chunks(chunks, config)
 
     collection.upsert(
@@ -97,16 +108,30 @@ def index_notes(chunks_by_note: dict[str, list[Chunk]], config: Config) -> None:
 
 
 def query(
-    text: str, config: Config, top_k: int | None = None, tags: list[str] | None = None
+    text: str,
+    config: Config,
+    top_k: int | None = None,
+    tags: list[str] | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
 ) -> dict:
     """Query collection with embedded input."""
     collection = get_collection(config)
     embedding = embed_text(text, config)
 
-    where = None
+    conditions = []
     if tags:
-        conditions = [{tag_key(t): True} for t in tags]
-        where = conditions[0] if len(conditions) == 1 else {"$and": conditions}
+        conditions.extend({tag_key(t): True} for t in tags)
+    if date_from is not None:
+        conditions.append({"date": {"$gte": date_to_int(date_from)}})
+    if date_to is not None:
+        conditions.append({"date": {"$lte": date_to_int(date_to)}})
+
+    where = None
+    if len(conditions) == 1:
+        where = conditions[0]
+    elif len(conditions) > 1:
+        where = {"$and": conditions}
 
     return collection.query(
         query_embeddings=[embedding], n_results=top_k or config.top_k, where=where

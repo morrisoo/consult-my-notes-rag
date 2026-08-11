@@ -52,7 +52,6 @@ def main():
             "This example compiles artifical meeting notes about a project over several weeks."
         )
 
-
     if st.button("Refresh Notes"):
         with st.spinner("Loading, chunking and embedding notes..."):
             try:
@@ -69,15 +68,30 @@ def main():
         logger.exception("Could not load tags.")
         available_tags = []
 
-    selected_tags = st.multiselect(options=available_tags, label="Filter by tag:")
+    with st.sidebar:
+        selected_tags = st.multiselect(options=available_tags, label="Filter by tag:")
 
+        use_date_filter = st.checkbox("Filter by date range")
+        date_from, date_to = None, None
+        if use_date_filter:
+            col1, col2 = st.columns(2)
+            with col1:
+                date_from = st.date_input("From")
+            with col2:
+                date_to = st.date_input("To")
 
     question = st.text_input("Ask something from your notes:")
 
     if question:
         with st.spinner("Thinking..."):
             try:
-                result = answer_question(question, config)
+                result = answer_question(
+                    question,
+                    config,
+                    tags=selected_tags or None,
+                    date_from=date_from,
+                    date_to=date_to,
+                )
             except Exception:
                 logger.exception("Could not answer question, something went wrong.")
                 st.error("Something went wrong.")
@@ -88,7 +102,8 @@ def main():
         if result.sources:
             st.subheader("Sources")
             for source in result.sources:
-                st.caption(f"**{source.title}** ({source.kind} - {source.note_path})")
+                date_str = f" — {source.date}" if source.date else ""
+                st.caption(f"**{source.title}** ({source.kind}{date_str} - {source.note_path})")
 
 
 if __name__ == "__main__":
