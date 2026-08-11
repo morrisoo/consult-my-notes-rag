@@ -1,5 +1,6 @@
 from notes_rag.ingest import Note, SEPARATOR
 import logging
+from datetime import date
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,6 +16,7 @@ class Chunk:
     tags: list[str]
     kind: str
     chunk_index: int
+    date: date | None 
 
 
 def split_sections(body: str) -> list[str]:
@@ -33,9 +35,10 @@ def chunk_note(note: Note, chunk_size: int, chunk_overlap: int) -> list[Chunk]:
                 text=note.description,
                 note_path=note.path,
                 title=note.title,
-                tags=None,
+                tags=note.tags,
                 kind="description",
                 chunk_index=0,
+                date=note.date,
             )
         )
 
@@ -45,9 +48,10 @@ def chunk_note(note: Note, chunk_size: int, chunk_overlap: int) -> list[Chunk]:
                 text=section,
                 note_path=note.path,
                 title=note.title,
-                tags=None,
+                tags=note.tags,
                 kind="body",
                 chunk_index=i,
+                date=note.date,
             )
         )
 

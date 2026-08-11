@@ -25,6 +25,7 @@ class Source:
     title: str
     note_path: str
     kind: str
+    date: str | None = None
 
 
 @dataclass
@@ -34,16 +35,24 @@ class Answer:
     matched: bool
 
 
+def _format_date(raw: int) -> str:
+    """Convert the stored YYYYMMDD int back to YYYY-MM-DD for display."""
+    s = str(raw)
+    return f"{s[:4]}-{s[4:6]}-{s[6:8]}"
+
+
 def _build_context(documents: list[str], metadata: list[dict]):
     blocks = []
     for doc, meta in zip(documents, metadata):
-        blocks.append(f"[{meta['title']} - {meta['kind']}]\n{doc}")
+        date_str = f" — {_format_date(meta['date'])}" if meta.get("date") else ""
+        blocks.append(f"[{meta['title']} - {meta['kind']}{date_str}]\n{doc}")
         return "\n\n---\n\n".join(blocks)
 
 
 def _filter_by_distance(
     results: dict, threshold: float
 ) -> tuple[list[str], list[float]]:
+    """Keep only the closest retrieved chunks."""
     documents = results["documents"][0]
     metadatas = results["metadatas"][0]
     distances = results["distances"][0]
@@ -60,8 +69,14 @@ def _filter_by_distance(
     return kept_docs, kept_meta
 
 
-def answer_question(question: str, config: Config):
-    results = query(question, config)
+def answer_question(
+    question: str,
+    config: Config,
+    tags: list[str] | None = None,
+    date_from=None,
+    date_to=None,
+):
+    results = query(question, config, tags=tags, date_from=date_from, date_to=date_to)
     print(results)
 
     if not results["documents"] or not results["documents"][0]:
@@ -81,7 +96,12 @@ def answer_question(question: str, config: Config):
     response = ollama.generate(model=config.llm_model, prompt=prompt)
 
     sources = [
-        Source(title=m["title"], note_path=m["note_path"], kind=m["kind"])
+        Source(
+            title=m["title"],
+            note_path=m["note_path"],
+            kind=m["kind"],
+            date=_format_date(m["date"]) if m.get("date") else None,
+        )
         for m in metadatas
     ]
 

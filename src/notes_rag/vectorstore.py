@@ -1,15 +1,26 @@
 from notes_rag.chunker import Chunk
 from notes_rag.config import Config
+from datetime import date
 from chromadb import PersistentClient
 from ollama import embeddings
 import logging
 
 logger = logging.getLogger(__name__)
-COLLECTION_NAME="my_notes"
+COLLECTION_NAME = "my_notes"
 
 
 def make_chunk_id(chunk: Chunk) -> str:
     return f"{chunk.note_path}::{chunk.kind}::{chunk.chunk_index}"
+
+
+def tag_key(tag: str) -> str:
+    """Turn a tag into a metadata field name."""
+    return f"tag_{tag.strip().lower().replace(' ', '-')}"
+
+
+def date_to_int(d) -> int:
+    """Encode a date as a int."""
+    return int(d.strftime("%Y%m%d"))
 
 
 def note_id_prex(note_path: str) -> str:
@@ -24,7 +35,9 @@ def get_client(config: Config):
 def get_collection(config: Config):
     """Reopen or create collection."""
     client = get_client(config)
-    return client.get_or_create_collection(name=COLLECTION_NAME, metadata={"hnsw:space":"cosine"})
+    return client.get_or_create_collection(
+        name=COLLECTION_NAME, metadata={"hnsw:space": "cosine"}
+    )
 
 
 def embed_text(text: str, config: Config) -> list[float]:
@@ -58,16 +71,23 @@ def upsert_chunks(chunks: list[Chunk], config: Config, collection) -> None:
 
     ids = [make_chunk_id(c) for c in chunks]
     documents = [c.text for c in chunks]
-    metadata = [
-        {
+    metadata = []
+    for c in chunks:
+        meta = {
             "note_path": str(c.note_path),
             "title": c.title,
-            "tags": c.tags,
+            "tags": ", ".join(c.tags),
             "kind": c.kind,
             "chunk_index": c.chunk_index,
         }
-        for c in chunks
-    ]
+        for tag in c.tags:
+            meta[tag_key(tag)] = True
+
+        if c.date is not None:
+            meta["date"] = date_to_int(c.date)
+
+        metadata.append(meta)
+
     embeddings = embed_chunks(chunks, config)
 
     collection.upsert(
@@ -87,8 +107,46 @@ def index_notes(chunks_by_note: dict[str, list[Chunk]], config: Config) -> None:
         upsert_chunks(chunks, config, collection)
 
 
-def query(text: str, config: Config, top_k: int | None = None) -> dict:
+def query(
+    text: str,
+    config: Config,
+    top_k: int | None = None,
+    tags: list[str] | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> dict:
     """Query collection with embedded input."""
     collection = get_collection(config)
     embedding = embed_text(text, config)
-    return collection.query(query_embeddings=[embedding], n_results=top_k or config.top_k)
+
+    conditions = []
+    if tags:
+        conditions.extend({tag_key(t): True} for t in tags)
+    if date_from is not None:
+        conditions.append({"date": {"$gte": date_to_int(date_from)}})
+    if date_to is not None:
+        conditions.append({"date": {"$lte": date_to_int(date_to)}})
+
+    where = None
+    if len(conditions) == 1:
+        where = conditions[0]
+    elif len(conditions) > 1:
+        where = {"$and": conditions}
+
+    return collection.query(
+        query_embeddings=[embedding], n_results=top_k or config.top_k, where=where
+    )
+
+
+def get_all_tags(config: Config) -> list[str]:
+    """Return every distinct tag in the index, sorted"""
+    collection = get_collection(config)
+    all_chunks = collection.get()
+    metadatas = all_chunks.get("metadatas", [])
+
+    tags = set()
+    for meta in metadatas:
+        raw = meta.get("tags", "")
+        tags.update(t.strip() for t in raw.split(",") if t.strip())
+
+    return sorted(tags)

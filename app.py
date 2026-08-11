@@ -5,7 +5,7 @@ from notes_rag.chunker import chunk_note
 from notes_rag.config import Config
 from notes_rag.ingest import load_notes
 from notes_rag.rag import answer_question
-from notes_rag.vectorstore import index_notes
+from notes_rag.vectorstore import index_notes, get_all_tags
 
 
 logger = logging.getLogger(__name__)
@@ -43,6 +43,15 @@ def main():
     st.title("Consult My Notes 📝")
     config = get_config()
 
+    css = """.st-key-title_container {background-color: #FFE7E6;}"""
+    st.html(f"<style>{css}</style>")
+
+    with st.container(border=True, key="title_container"):
+        st.markdown("This is a chatbot! Ask me **anything** about your linked data.")
+        st.markdown(
+            "This example compiles artifical meeting notes about a project over several weeks."
+        )
+
     if st.button("Refresh Notes"):
         with st.spinner("Loading, chunking and embedding notes..."):
             try:
@@ -53,21 +62,36 @@ def main():
             except Exception:
                 logger.exception("Indexing failed")
 
-    css = """.st-key-title_container {background-color: #FFE7E6;}"""
-    st.html(f"<style>{css}</style>")
+    try:
+        available_tags = get_all_tags(config)
+    except Exception:
+        logger.exception("Could not load tags.")
+        available_tags = []
 
-    with st.container(border=True, key="title_container"):
-        st.markdown(
-            "This is a chatbot! Ask me **anything** about your linked data."
-        )
-        st.markdown("This example compiles artifical meeting notes about a project over several weeks.")
+    with st.sidebar:
+        selected_tags = st.multiselect(options=available_tags, label="Filter by tag:")
+
+        use_date_filter = st.checkbox("Filter by date range")
+        date_from, date_to = None, None
+        if use_date_filter:
+            col1, col2 = st.columns(2)
+            with col1:
+                date_from = st.date_input("From")
+            with col2:
+                date_to = st.date_input("To")
 
     question = st.text_input("Ask something from your notes:")
 
     if question:
         with st.spinner("Thinking..."):
             try:
-                result = answer_question(question, config)
+                result = answer_question(
+                    question,
+                    config,
+                    tags=selected_tags or None,
+                    date_from=date_from,
+                    date_to=date_to,
+                )
             except Exception:
                 logger.exception("Could not answer question, something went wrong.")
                 st.error("Something went wrong.")
@@ -78,7 +102,8 @@ def main():
         if result.sources:
             st.subheader("Sources")
             for source in result.sources:
-                st.caption(f"**{source.title}** ({source.kind} - {source.note_path})")
+                date_str = f" — {source.date}" if source.date else ""
+                st.caption(f"**{source.title}** ({source.kind}{date_str} - {source.note_path})")
 
 
 if __name__ == "__main__":
