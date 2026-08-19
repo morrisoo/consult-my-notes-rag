@@ -23,8 +23,8 @@ Ask a questions, get an answer based on what you have written, with source citat
 │       ├── rag.py                          # Retrieval and generation
 │       └── vectorstore.py                  # Stores Ollama embeddings in ChromaDB vectorstore
 ├── .streamlit/                                           
-│   └── sample_notes                        # Fake sample notes for illustrative purposes
-├── .env.template                           # UI theme        
+│   └── config.toml                         # UI theme  
+├── .env.template                           # Template .env file    
 └── uv.lock
 ```
 
