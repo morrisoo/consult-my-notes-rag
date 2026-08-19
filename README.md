@@ -1,5 +1,5 @@
 ## Consult My Notes 
-A local, private RAG (retrieval-augmented generation) tool for asking questions about your own markdown notes. The workflow runs entirely offline, using Ollama for embeddings and generation and ChromaDB fofor the vector store. Nothing leaves your machine and no API keys are needed.
+A local, private RAG (retrieval-augmented generation) tool for asking questions about your own markdown notes. The workflow runs entirely offline, using Ollama for embeddings and generation and ChromaDB for the vector store. Nothing leaves your machine and no API keys are needed.
 
 Ask a questions, get an answer based on what you have written, with source citations, or nothing if your notes can't answer the question.
 
